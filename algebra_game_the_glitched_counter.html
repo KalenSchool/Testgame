@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Glitched Counter - Algebra Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,700;1,400&family=Share+Tech+Mono&display=swap');
+
+        body {
+            font-family: 'Chakra Petch', sans-serif;
+            background-color: #0f172a;
+        }
+
+        .font-mono-tech {
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* Bulb Glow Effects */
+        .green-bulb-off {
+            background: radial-gradient(circle, #064e3b 0%, #022c22 100%);
+            border: 4px solid #059669;
+            box-shadow: inset 0 0 10px #000;
+        }
+
+        .green-bulb-on {
+            background: radial-gradient(circle, #34d399 0%, #10b981 100%);
+            border: 4px solid #a7f3d0;
+            box-shadow: 0 0 35px #10b981, inset 0 0 15px #ecfdf5;
+        }
+
+        .red-bulb-broken {
+            background: radial-gradient(circle, #450a0a 0%, #1c0505 100%);
+            border: 4px solid #7f1d1d;
+            box-shadow: inset 0 0 10px #000;
+            opacity: 0.85;
+        }
+
+        /* Scanline effect */
+        .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 0, 0, 0.3) 50%,
+                rgba(0, 0, 0, 0.3)
+            );
+            background-size: 100% 4px;
+        }
+
+        /* Keyframes */
+        @keyframes spark {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .spark-effect {
+            animation: spark 0.2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col justify-between p-4 md:p-8 select-none">
+
+    <!-- Header / Navbar -->
+    <header class="max-w-4xl mx-auto w-full flex flex-wrap justify-between items-center bg-slate-800/80 p-4 rounded-xl border border-slate-700 shadow-xl gap-4">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-emerald-500/20 border border-emerald-500/40 rounded-lg text-emerald-400">
+                <i class="fa-solid fa-microchip text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold tracking-wider text-emerald-400">THE GLITCHED COUNTER</h1>
+                <p class="text-xs text-slate-400">Deductive Logic & Subtraction Training</p>
+            </div>
+        </div>
+        
+        <!-- Scoreboard -->
+        <div class="flex gap-4 md:gap-6 text-center font-mono-tech">
+            <div class="bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700">
+                <div class="text-xs text-slate-400">SCORE</div>
+                <div id="scoreDisplay" class="text-xl text-emerald-400 font-bold">0</div>
+            </div>
+            <div class="bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700">
+                <div class="text-xs text-slate-400">STREAK</div>
+                <div id="streakDisplay" class="text-xl text-amber-400 font-bold">0🔥</div>
+            </div>
+            <div class="bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700">
+                <div class="text-xs text-slate-400">ROUND</div>
+                <div id="roundDisplay" class="text-xl text-cyan-400 font-bold">1</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Container -->
+    <main class="max-w-4xl mx-auto w-full my-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+
+        <!-- Left: Circuit Panel & Counter -->
+        <section class="md:col-span-7 bg-slate-800/60 border border-slate-700 rounded-2xl p-6 shadow-2xl relative overflow-hidden flex flex-col items-center">
+            
+            <!-- Digital Counter Display -->
+            <div class="w-full bg-slate-950 border-2 border-slate-700 rounded-xl p-4 mb-6 text-center relative scanlines shadow-inner">
+                <div class="text-xs font-mono-tech text-slate-500 tracking-widest mb-1">TOTAL FLASHES</div>
+                <div class="flex justify-center items-center gap-2">
+                    <span id="counterValue" class="text-5xl md:text-6xl font-mono-tech font-bold text-amber-500 tracking-wider">00</span>
+                    <i class="fa-solid fa-bolt text-amber-500/50 text-sm animate-pulse"></i>
+                </div>
+                <div id="counterStatus" class="text-xs font-mono-tech text-emerald-400 mt-2 h-4">SYSTEM READY</div>
+            </div>
+
+            <!-- Lights & Dynamic Input Display Area -->
+            <div class="grid grid-cols-2 gap-6 w-full max-w-md mb-6">
+                <!-- Green Light Unit -->
+                <div class="flex flex-col items-center gap-3 bg-slate-900/40 p-4 rounded-xl border border-slate-700/50">
+                    <div class="text-xs font-bold text-emerald-400 tracking-wider flex items-center gap-1">
+                        <i class="fa-solid fa-circle text-[8px]"></i> ACTIVE LIGHT
+                    </div>
+                    <div id="greenBulb" class="green-bulb-off w-24 h-24 rounded-full flex items-center justify-center transition-all duration-75 relative">
+                        <i id="greenIcon" class="fa-solid fa-lightbulb text-emerald-900/40 text-3xl"></i>
+                    </div>
+                    <span class="text-xs text-slate-400 font-mono-tech">GREEN (VISIBLE)</span>
+
+                    <!-- Green Flash Input -->
+                    <div class="w-full mt-2 pt-2 border-t border-slate-800 flex flex-col items-center">
+                        <label class="text-[11px] text-emerald-400/90 font-bold mb-1">GREEN FLASHES</label>
+                        <select id="greenGuess" disabled onchange="updateGuessState()" class="w-full bg-slate-800 text-emerald-400 border border-emerald-500/40 rounded-lg p-2 text-center text-lg font-bold font-mono-tech disabled:opacity-50 transition-all focus:outline-none focus:border-emerald-400">
+                            <option value="" disabled selected>?</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Red Light Unit (Broken) -->
+                <div class="flex flex-col items-center gap-3 bg-slate-900/40 p-4 rounded-xl border border-slate-700/50">
+                    <div class="text-xs font-bold text-rose-500 tracking-wider flex items-center gap-1">
+                        <i class="fa-solid fa-triangle-exclamation text-[10px]"></i> FAULTY LIGHT
+                    </div>
+                    <div id="redBulb" class="red-bulb-broken w-24 h-24 rounded-full flex items-center justify-center relative">
+                        <i class="fa-solid fa-lightbulb text-rose-950 text-3xl"></i>
+                        <!-- Crack Overlay -->
+                        <i class="fa-solid fa-burst text-rose-900/60 text-4xl absolute"></i>
+                    </div>
+                    <span class="text-xs text-rose-400/80 font-mono-tech">RED (BROKEN)</span>
+
+                    <!-- Red Flash Input -->
+                    <div class="w-full mt-2 pt-2 border-t border-slate-800 flex flex-col items-center">
+                        <label class="text-[11px] text-rose-400/90 font-bold mb-1">RED FLASHES</label>
+                        <select id="redGuess" disabled onchange="updateGuessState()" class="w-full bg-slate-800 text-rose-400 border border-rose-500/40 rounded-lg p-2 text-center text-lg font-bold font-mono-tech disabled:opacity-50 transition-all focus:outline-none focus:border-rose-400">
+                            <option value="" disabled selected>?</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start Sequence Trigger Button -->
+            <div class="w-full">
+                <button id="startBtn" onclick="runSequence()" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-slate-950 font-bold text-lg rounded-xl shadow-lg shadow-emerald-950/40 transform active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                    <i id="startBtnIcon" class="fa-solid fa-play"></i> <span id="startBtnText">PLAY SIGNAL SEQUENCE</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Right: Input & Equation Workbench -->
+        <section class="md:col-span-5 bg-slate-800/60 border border-slate-700 rounded-2xl p-6 shadow-2xl flex flex-col justify-between h-full">
+            
+            <div>
+                <h2 class="text-lg font-bold text-slate-200 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-cyan-400"></i> DEDUCTION PANEL
+                </h2>
+                <p class="text-sm text-slate-400 mb-6">
+                    Watch the total counter change, record your observations under each light, and verify your findings!
+                </p>
+
+                <!-- Submit Action Area -->
+                <div id="interactionArea" class="space-y-4">
+                    <button id="submitBtn" onclick="checkAnswer()" disabled class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 disabled:text-slate-500 text-slate-950 font-bold rounded-xl transition-all shadow-lg">
+                        CHECK ANSWER
+                    </button>
+                </div>
+            </div>
+
+            <!-- Result Feedback Box -->
+            <div id="feedbackBox" class="mt-6 p-4 rounded-xl border border-slate-700 bg-slate-900/50 hidden">
+                <div id="feedbackTitle" class="font-bold text-base mb-1"></div>
+                <div id="feedbackDetail" class="text-xs text-slate-300 space-y-1"></div>
+                <button onclick="nextRound()" class="mt-3 w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-sm font-bold rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
+                    <span>NEXT ROUND / RESTART</span> <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer Instructions -->
+    <footer class="max-w-4xl mx-auto w-full text-center text-xs text-slate-500 border-t border-slate-800 pt-4">
+        <p>The Red light is broken and does not emit visible light, but its circuit still increments the master counter.</p>
+    </footer>
+
+    <!-- Game Logic Script -->
+    <script>
+        // Game State Variables
+        let currentCounter = 0;
+        let greenFlashes = 0;
+        let redFlashes = 0;
+        let startCounterValue = 0;
+        let score = 0;
+        let streak = 0;
+        let round = 1;
+        let isRunningSequence = false;
+        let currentSequence = [];
+        let hasRoundStarted = false;
+
+        // Elements
+        const counterValEl = document.getElementById('counterValue');
+        const counterStatusEl = document.getElementById('counterStatus');
+        const greenBulbEl = document.getElementById('greenBulb');
+        const greenIconEl = document.getElementById('greenIcon');
+        const greenGuessEl = document.getElementById('greenGuess');
+        const redGuessEl = document.getElementById('redGuess');
+        const startBtn = document.getElementById('startBtn');
+        const startBtnText = document.getElementById('startBtnText');
+        const startBtnIcon = document.getElementById('startBtnIcon');
+        const submitBtn = document.getElementById('submitBtn');
+        const feedbackBox = document.getElementById('feedbackBox');
+        const feedbackTitle = document.getElementById('feedbackTitle');
+        const feedbackDetail = document.getElementById('feedbackDetail');
+
+        // Audio Context (Synthesized Audio Effects)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(freq, type = 'sine', duration = 0.1) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) { /* Audio fallback */ }
+        }
+
+        function playGreenFlashSound() {
+            playSound(587.33, 'sine', 0.12); // D5 note
+        }
+
+        // Helper Delay function
+        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Helper to get random integer in a range
+        const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+        // Start / Replay Sequence Logic
+        async function runSequence() {
+            if (isRunningSequence) return;
+            
+            // If starting a new round, pick target flash numbers
+            if (!hasRoundStarted) {
+                greenFlashes = Math.floor(Math.random() * 5) + 1;
+                redFlashes = Math.floor(Math.random() * 5) + 1;
+                
+                currentSequence = [];
+                for (let i = 0; i < greenFlashes; i++) currentSequence.push('GREEN');
+                for (let i = 0; i < redFlashes; i++) currentSequence.push('RED');
+
+                hasRoundStarted = true;
+                resetGuessInputs();
+            }
+
+            startCounterValue = 0;
+            await executeSequenceAnimation();
+        }
+
+        // Core Sequence Animation Loop
+        async function executeSequenceAnimation() {
+            isRunningSequence = true;
+            startBtn.disabled = true;
+            startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            feedbackBox.classList.add('hidden');
+
+            // Reset counter internal state
+            currentCounter = startCounterValue;
+            counterValEl.textContent = "??";
+
+            counterStatusEl.textContent = "TRANSMITTING SIGNALS...";
+            counterStatusEl.className = "text-xs font-mono-tech text-amber-400 mt-2 h-4 animate-pulse";
+
+            await sleep(600);
+
+            // Execute Flash Loop
+            for (let signal of currentSequence) {
+                currentCounter++;
+
+                if (signal === 'GREEN') {
+                    const flashDuration = getRandomInt(250, 500);
+
+                    greenBulbEl.className = "green-bulb-on w-24 h-24 rounded-full flex items-center justify-center transition-all duration-75 relative scale-105";
+                    greenIconEl.className = "fa-solid fa-lightbulb text-white text-3xl";
+                    playGreenFlashSound();
+                    
+                    await sleep(flashDuration);
+                    
+                    greenBulbEl.className = "green-bulb-off w-24 h-24 rounded-full flex items-center justify-center transition-all duration-75 relative";
+                    greenIconEl.className = "fa-solid fa-lightbulb text-emerald-900/40 text-3xl";
+                } else {
+                    const silentDuration = getRandomInt(300, 450);
+                    await sleep(silentDuration);
+                }
+
+                const pauseDuration = getRandomInt(200, 450);
+                await sleep(pauseDuration);
+            }
+
+            // Reveal final count once sequence is complete
+            counterValEl.textContent = String(currentCounter).padStart(2, '0');
+
+            // Sequence Complete
+            counterStatusEl.textContent = "SEQUENCE COMPLETE - RECORD INPUTS";
+            counterStatusEl.className = "text-xs font-mono-tech text-cyan-400 mt-2 h-4";
+
+            // Enable Dropdown Inputs
+            greenGuessEl.disabled = false;
+            redGuessEl.disabled = false;
+
+            // UI Label update
+            startBtnText.textContent = "PLAY SIGNAL SEQUENCE";
+            startBtnIcon.className = "fa-solid fa-play";
+            startBtn.disabled = false;
+            startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            isRunningSequence = false;
+            updateGuessState();
+        }
+
+        function updateGuessState() {
+            if (greenGuessEl.value !== "" && redGuessEl.value !== "" && !isRunningSequence) {
+                submitBtn.disabled = false;
+            }
+        }
+
+        function resetGuessInputs() {
+            greenGuessEl.selectedIndex = 0;
+            redGuessEl.selectedIndex = 0;
+            greenGuessEl.disabled = true;
+            redGuessEl.disabled = true;
+            submitBtn.disabled = true;
+        }
+
+        function checkAnswer() {
+            const userGreen = parseInt(greenGuessEl.value);
+            const userRed = parseInt(redGuessEl.value);
+
+            if (isNaN(userGreen) || isNaN(userRed)) return;
+
+            const totalAdded = currentCounter - startCounterValue;
+            const greenCorrect = (userGreen === greenFlashes);
+            const redCorrect = (userRed === redFlashes);
+            const isCorrect = greenCorrect && redCorrect;
+
+            feedbackBox.classList.remove('hidden');
+
+            if (isCorrect) {
+                playSound(880, 'triangle', 0.2); // Victory tone
+                score += 100 + (streak * 20);
+                streak++;
+                
+                feedbackTitle.textContent = "🎉 PERFECT DEDUCTION!";
+                feedbackTitle.className = "font-bold text-base text-emerald-400 mb-1";
+                
+                feedbackDetail.innerHTML = `
+                    <p>Total Flashes count: <b class="text-amber-400">${totalAdded}</b></p>
+                    <p>Green Flashes: <b class="text-emerald-400">${greenFlashes}</b> | Red Flashes: <b class="text-rose-400">${redFlashes}</b></p>
+                `;
+            } else {
+                playSound(150, 'sawtooth', 0.3); // Defeat tone
+                streak = 0;
+                
+                feedbackTitle.textContent = "❌ INCORRECT DEDUCTION";
+                feedbackTitle.className = "font-bold text-base text-rose-400 mb-1";
+                
+                feedbackDetail.innerHTML = `
+                    <p>Green guessed: <b class="${greenCorrect ? 'text-emerald-400' : 'text-rose-400'}">${userGreen} (${greenFlashes})</b> | Red guessed: <b class="${redCorrect ? 'text-emerald-400' : 'text-rose-400'}">${userRed} (${redFlashes})</b></p>
+                    <p>Total Flashes count: <b class="text-amber-400">${totalAdded}</b></p>
+                `;
+            }
+
+            // Update UI Scoreboard
+            document.getElementById('scoreDisplay').textContent = score;
+            document.getElementById('streakDisplay').textContent = `${streak}🔥`;
+
+            // Disable Inputs until next round
+            greenGuessEl.disabled = true;
+            redGuessEl.disabled = true;
+            submitBtn.disabled = true;
+        }
+
+        function nextRound() {
+            round++;
+            document.getElementById('roundDisplay').textContent = round;
+            
+            feedbackBox.classList.add('hidden');
+            counterStatusEl.textContent = "SYSTEM READY";
+            counterStatusEl.className = "text-xs font-mono-tech text-emerald-400 mt-2 h-4";
+            
+            startBtnText.textContent = "PLAY SIGNAL SEQUENCE";
+            startBtnIcon.className = "fa-solid fa-play";
+            startBtn.disabled = false;
+            startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            startCounterValue = 0;
+            currentCounter = 0;
+            counterValEl.textContent = "00";
+
+            hasRoundStarted = false;
+            resetGuessInputs();
+            isRunningSequence = false;
+        }
+    </script>
+</body>
+</html>
